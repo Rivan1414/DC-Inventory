@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DC Inventory - Data Center Stock & Log Management</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-color: #1e293b;
+            --text-color: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --danger-color: #ef4444;
+            --success-color: #22c55e;
+            --border-color: #334155;
+            --warning-color: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 24px;
+        }
+
+        header h1 span {
+            color: var(--accent-color);
+        }
+
+        /* Grid Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 2.5fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .log-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Panel/Card Style */
+        .panel {
+            background-color: var(--panel-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .panel h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* Form Style */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            color: var(--text-color);
+            outline: none;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        button {
+            cursor: pointer;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* Table Style */
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        th {
+            background-color: rgba(255, 255, 255, 0.02);
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.01);
+        }
+
+        /* Badges */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-ok { background-color: rgba(34, 197, 94, 0.15); color: var(--success-color); }
+        .status-low { background-color: rgba(239, 68, 68, 0.15); color: var(--danger-color); }
+        
+        .type-in { background-color: rgba(34, 197, 94, 0.2); color: var(--success-color); }
+        .type-out { background-color: rgba(245, 158, 11, 0.2); color: var(--warning-color); }
+        
+        /* Gaya Khusus Form Login */
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= 1. HALAMAN LOGIN ================= -->
+    <div id="loginPage" class="panel login-container">
+        <h2>DASEN Inventory Login</h2>
+        <p style="color: var(--text-muted); margin-bottom: 15px; font-size: 14px;">Gunakan akun: admin | admin123</p>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" placeholder="Masukkan username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Masukkan password" required>
+            </div>
+            <p id="errorMsg" style="color: var(--danger-color); display: none; margin-bottom: 15px; font-size: 14px;">❌ Username atau Password salah!</p>
+            <button type="submit" class="btn-primary">Masuk ke Sistem</button>
+        </form>
+    </div>
+
+    <!-- ================= 2. HALAMAN UTAMA DASHBOARD ================= -->
+    <div id="mainApp" class="container" style="display: none;">
+        <header>
+            <h1>DASEN<span>Inventory</span></h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <p style="color: var(--text-muted);">Data Center Stock Management</p>
+                <button onclick="logout()" style="background-color: var(--border-color); color: var(--text-color); padding: 5px 15px;">Keluar</button>
+            </div>
+        </header>
+
+        <!-- GRID KONTEN DASHBOARD -->
+        <div class="main-grid">
+            <!-- Form Tambah Stok -->
+            <div class="panel">
+                <h2>Input Barang Masuk (Baru)</h2>
+                <form id="inForm">
+                    <div class="form-group">
+                        <label for="inDate">Tanggal Masuk</label>
+                        <input type="date" id="inDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemName">Nama Barang</label>
+                        <input type="text" id="itemName" placeholder="Contoh: Cisco Switch C9300" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemCategory">Kategori</label>
+                        <select id="itemCategory" required>
+                            <option value="Networking">Networking</option>
+                            <option value="Server">Server Components</option>
+                            <option value="Cabling">Cabling</option>
+                            <option value="Power">Power & Cooling</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemQty">Jumlah Masuk (Pcs)</label>
+                        <input type="number" id="itemQty" min="1" placeholder="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemRack">Lokasi Penyimpanan</label>
+                        <input type="text" id="itemRack" placeholder="Contoh: Lemari" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="inDesc">Keterangan / Pengirim</label>
+                        <input type="text" id="inDesc" placeholder="Contoh: Pengadaan Baru" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Tambah ke Stok</button>
+                </form>
+            </div>
+
+            <!-- Tabel Stok Barang Terkini -->
+            <div class="panel">
+                <h2>Master Data Stok Terkini</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama Barang</th>
+                                <th>Kategori</th>
+                                <th>Total Stok</th>
+                                <th>Lokasi Penyimpanan</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stockTableBody">
+                            <!-- Diisi via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Form Cepat Barang Keluar -->
+                <h2 style="margin-top: 30px;">Form Barang Keluar</h2>
+                <form id="outForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="outDate">Tanggal Keluar</label>
+                        <input type="date" id="outDate" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="outSelectBarang">Pilih Barang</label>
+                        <select id="outSelectBarang" required>
+                            <!-- Generate otomatis -->
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="outQty">Jumlah Keluar</label>
+                        <input type="number" id="outQty" min="1" placeholder="0" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label for="outDesc">Keterangan Pemakaian</label>
+                        <input type="text" id="outDesc" placeholder="Contoh: Maintenance Rack B-02" required>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn-primary" style="background-color: var(--warning-color); color: #000;">Catat Keluar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Histori Logs -->
+        <div class="log-grid">
+            <div class="panel">
+                <h2>Log Histori Transaksi Barang (Masuk & Keluar)</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Jenis</th>
+                                <th>Nama Barang</th>
+                                <th>Jumlah</th>
+                                <th>Keterangan Pemakaian / Info</th>
+                                <th>aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            <!-- Diisi via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // Sesuaikan dengan IP Hospot/Wi-Fi HP Anda dan Port 8080 yang stabil
+    const API_URL = window.location.origin + "/api";
+
+    const loginPage = document.getElementById('loginPage');
+    const mainApp = document.getElementById('mainApp');
+    const loginForm = document.getElementById('loginForm');
+    const errorMsg = document.getElementById('errorMsg');
+
+    const stockTableBody = document.getElementById('stockTableBody');
+    const logTableBody = document.getElementById('logTableBody');
+    const outSelectBarang = document.getElementById('outSelectBarang');
+
+    document.getElementById('inDate').valueAsDate = new Date();
+    document.getElementById('outDate').valueAsDate = new Date();
+
+    // ================= 1. PROSES LOGIN KE SERVER =================
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                // Sembunyikan login, tampilkan dashboard
+                loginPage.style.display = 'none';
+                mainApp.style.display = 'block';
+                
+                // Ambil data dari server Termux
+                loadDashboardData();
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        } catch (error) {
+            alert("Gagal terhubung ke backend server! Pastikan Termux menyala.");
+            console.error(error);
+        }
+    });
+
+    function logout() {
+        if(confirm("Apakah Anda ingin keluar dari sistem?")) {
+            mainApp.style.display = 'none';
+            loginPage.style.display = 'block';
+            loginForm.reset();
+            errorMsg.style.display = 'none';
+        }
+    }
+
+    // ================= 2. FUNGSI UTAMA AMBIL DATA =================
+    async function loadDashboardData() {
+        await renderStockTable();
+        await renderLogTable();
+    }
+
+    async function renderStockTable() {
+        try {
+            const response = await fetch(`${API_URL}/stock`);
+            const stockData = await response.json();
+            stockTableBody.innerHTML = '';
+            outSelectBarang.innerHTML = '<option value="" disabled selected>-- Pilih Barang --</option>';
+
+            stockData.forEach(item => {
+                const statusClass = item.qty <= 5 ? 'status-low' : 'status-ok';
+                const statusText = item.qty <= 5 ? 'Low Stock' : 'Available';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${item.name}</strong></td>
+                    <td>${item.category}</td>
+                    <td><strong>${item.qty}</strong> Pcs</td>
+                    <td>${item.rack}</td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td><button class="btn-danger" onclick="deleteMasterItem(${item.id})">Hapus</button></td>
+                `;
+                stockTableBody.appendChild(row);
+
+                if(item.qty > 0) {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = `${item.name} (Sisa: ${item.qty})`;
+                    outSelectBarang.appendChild(option);
+                }
+            });
+        } catch (error) { console.error(error); }
+    }
+
+    async function renderLogTable() {
+        try {
+            const response = await fetch(`${API_URL}/logs`);
+            const logs = await response.json();
+            logTableBody.innerHTML = '';
+           [...logs].reverse().forEach(log => {
+            const typeClass = log.type === 'MASUK' ? 'type-in' : 'type-out';
+           const row = document.createElement('tr');
+             row.innerHTML = `
+        <td>${log.date}</td>
+        <td><span class="badge ${typeClass}">${log.type}</span></td>
+        <td><strong>${log.name}</strong></td>
+        <td>${log.qty} Pcs</td>
+        <td><span style="color: #cbd5e1;">${log.desc}</span></td>
+        <td><button class="btn-danger" onclick="deleteSingleLog(${log.id})">Hapus</button></td>
+    `;
+            logTableBody.appendChild(row);
+        });
+
+        } catch (error) { console.error(error); }
+    }
+
+    // ================= 3. INPUT DATA KE SERVER =================
+    document.getElementById('inForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const data = {
+            date: document.getElementById('inDate').value,
+            name: document.getElementById('itemName').value,
+            category: document.getElementById('itemCategory').value,
+            qty: parseInt(document.getElementById('itemQty').value),
+            rack: document.getElementById('itemRack').value,
+            desc: document.getElementById('inDesc').value
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/stock/in`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                loadDashboardData();
+                document.getElementById('itemName').value = '';
+                document.getElementById('itemQty').value = '';
+                document.getElementById('inDesc').value = '';
+            }
+        } catch (error) { alert("Gagal mencatat barang!"); }
+    });
+
+    document.getElementById('outForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const data = {
+            date: document.getElementById('outDate').value,
+            itemId: document.getElementById('outSelectBarang').value,
+            qty: parseInt(document.getElementById('outQty').value),
+            desc: document.getElementById('outDesc').value
+        };
+
+        try {
+            const response = await fetch(`${API_URL}/stock/out`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                loadDashboardData();
+                document.getElementById('outQty').value = '';
+                document.getElementById('outDesc').value = '';
+            } else {
+                const err = await response.json();
+                alert(err.message);
+            }
+        } catch (error) { alert("Gagal mencatat barang keluar!"); }
+    });
+
+    async function deleteMasterItem(id) {
+        if(confirm("Hapus item dari Master Stok?")) {
+            try {
+                const response = await fetch(`${API_URL}/stock/${id}`, { method: 'DELETE' });
+                if (response.ok) loadDashboardData();
+            } catch (error) { console.error(error); }
+        }
+    }
+    // Fungsi untuk menghapus satu baris histori transaksi
+async function deleteSingleLog(id) {
+    if(confirm("Hapus baris riwayat transaksi ini karena salah input?")) {
+        try {
+            const response = await fetch(`${API_URL}/logs/${id}`, {
+                method: 'DELETE'
+             });
+             if (response.ok) {
+                 renderLogTable(); // Refresh tabel histori secara real-time
+             }
+        } catch (error) {
+            alert("Gagal menghapus log transaksi!");
+            console.error(error);
+        }
+    }
+}
+
+</script>
+</body>
+</html>
