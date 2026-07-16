@@ -2,8 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs'); // <--- Modul untuk simpan file
 const app = express();
-const PORT = process.env.PORT || 8080;
-const DATA_FILE = './data.json';
+const PORT = 8080;
+const DATA_FILE = '/sdcard/dc-backend/data.json';
 
 app.use(cors());
 app.use(express.json());
